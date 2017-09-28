@@ -612,6 +612,7 @@ var Configuration = /** @class */ (function () {
         this._mainData = {
             output: COMPODOC_DEFAULTS.folder,
             theme: COMPODOC_DEFAULTS.theme,
+            exports: 'none',
             extTheme: '',
             serve: false,
             port: COMPODOC_DEFAULTS.port,
@@ -4753,13 +4754,13 @@ var Application = /** @class */ (function () {
         }
         $htmlengine.init().then(function () {
             _this.processPackageJson();
-        });
+        });		
     };
     /**
      * Start compodoc documentation coverage
      */
     Application.prototype.testCoverage = function () {
-        this.getDependenciesData();
+        this.getDependenciesData();		
     };
     /**
      * Store files for initial processing
@@ -5023,6 +5024,128 @@ var Application = /** @class */ (function () {
         }
         logger.info('-------------------');
     };
+	
+	Application.prototype.writeJSON = function () {
+		var jsonData = {
+				"directives" : [], 
+				"injectables" : [], 
+				"routes" : [], 
+				"pipes" : [], 
+				"modules" : [], 
+				"classes" : [], 
+				"components" : [], 
+				"interfaces" : [], 
+				"miscellaneous" : { 
+					"variables" : [],
+					"functions" : [],
+					"typealiases" : [],
+					"enumerations" : []
+				}
+		};
+		if ($dependenciesEngine.directives.length > 0) {            
+			var directives = $dependenciesEngine.getDirectives();
+			/*console.log('Directive example');
+			console.log(directives[0]);*/
+			for(var i=0; i < directives.length; i++)
+			{
+				//jsonData.directives.push(directives[i].name);
+			}
+		}
+        if ($dependenciesEngine.injectables.length > 0) {
+			var injectables = $dependenciesEngine.getInjectables();
+			/*console.log('Injectable example');
+			console.log(injectables[0]);*/
+			for(var i=0; i < injectables.length; i++)
+			{
+				//jsonData.injectables.push(injectables[i].name);
+			}
+		}
+        if ($dependenciesEngine.routes && $dependenciesEngine.routes.children.length > 0) {
+			var routes = $dependenciesEngine.getRoutes();
+			/*console.log('Route example');
+			console.log(routes[0]);*/
+			for(var i=0; i < routes.length; i++)
+			{
+				//jsonData.routes.push(routes[i].name);
+			}
+		}
+        if ($dependenciesEngine.pipes.length > 0) {
+			var pipes = $dependenciesEngine.getPipes();
+			/*console.log('Pipe example');
+			console.log(pipes[0]);*/
+			for(var i=0; i < pipes.length; i++)
+			{
+				//jsonData.pipes.push(pipes[i].name);
+			}
+		}
+        if ($dependenciesEngine.modules.length > 0) {
+			var modules = $dependenciesEngine.getModules();
+			// console.log(modules[0]);
+			for(var i=0; i < modules.length; i++)
+			{
+				// jsonData.modules.push(modules[i].name);
+			}
+		}
+        if ($dependenciesEngine.classes.length > 0) {
+			var classes = $dependenciesEngine.getClasses();
+			for(var i=0; i < classes.length; i++)
+			{
+				jsonData.classes.push(classes[i].name);
+			}
+		}
+        if ($dependenciesEngine.components.length > 0) {
+			var components = $dependenciesEngine.getComponents();
+			// console.log(components[0]);
+			for(var i=0; i < components.length; i++)
+			{
+				//jsonData.components.push(components[i].name);
+			}
+		}
+        if ($dependenciesEngine.interfaces.length > 0) {
+			var interfaces = $dependenciesEngine.getInterfaces();
+			// console.log(interfaces[0]);
+			for(var i=0; i < interfaces.length; i++)
+			{
+				jsonData.interfaces.push(interfaces[i].name);
+			}
+		}
+        if ($dependenciesEngine.miscellaneous.variables.length > 0 ||
+            $dependenciesEngine.miscellaneous.functions.length > 0 ||
+            $dependenciesEngine.miscellaneous.typealiases.length > 0 ||
+            $dependenciesEngine.miscellaneous.enumerations.length > 0) {
+			var miscellaneous = $dependenciesEngine.getMiscellaneous();
+			
+			/*
+			console.log('Variable example');
+			console.log(miscellaneous.variables[0]);
+			console.log('Function example');
+			console.log(miscellaneous.functions[0]);
+			console.log('Typealias example');
+			console.log(miscellaneous.typealiases[0]);
+			console.log('Enumeration example');
+			console.log(miscellaneous.enumerations[0]);
+			*/
+			for(var i=0; i < miscellaneous.variables.length; i++)
+			{
+				// jsonData.miscellaneous.variables.push(miscellaneous.variables[i].name);
+			}
+			for(var i=0; i < miscellaneous.functions.length; i++)
+			{
+				jsonData.miscellaneous.functions.push(miscellaneous.functions[i].name);
+			}
+			for(var i=0; i < miscellaneous.typealiases.length; i++)
+			{
+				jsonData.miscellaneous.typealiases.push(miscellaneous.typealiases[i].name);
+			}
+			for(var i=0; i < miscellaneous.enumerations.length; i++)
+			{
+				jsonData.miscellaneous.enumerations.push(miscellaneous.enumerations[i].name);
+			}
+		}
+		
+		console.log(jsonData);
+    };
+	
     Application.prototype.prepareEverything = function () {
         var _this = this;
         var actions = [];
@@ -5055,6 +5178,7 @@ var Application = /** @class */ (function () {
         if (!this.configuration.mainData.disableCoverage) {
             actions.push(function () { return _this.prepareCoverage(); });
         }
+				
         if (this.configuration.mainData.includes !== '') {
             actions.push(function () { return _this.prepareExternalIncludes(); });
         }
@@ -5745,6 +5869,7 @@ var Application = /** @class */ (function () {
             }, function (e) {
                 logger.error(e);
             });
+			_this.writeJSON();
         })
             .catch(function (e) {
             logger.error(e);
@@ -6096,6 +6221,7 @@ var CliApplication = /** @class */ (function (_super) {
         program
             .version(pkg.version)
             .usage('<src> [options]')
+            .option('-e, --exports [format]', 'Export in specified format (none|JSON|XML|CSV)')
             .option('-p, --tsconfig [config]', 'A tsconfig.json file')
             .option('-d, --output [folder]', 'Where to store the generated documentation (default: ./documentation)', COMPODOC_DEFAULTS.folder)
             .option('-y, --extTheme [file]', 'External styling theme file')
@@ -6124,6 +6250,9 @@ var CliApplication = /** @class */ (function (_super) {
         if (program.output) {
             this.configuration.mainData.output = program.output;
         }
+		if (program.exports) {
+            this.configuration.mainData.exports = program.exports;
+		}
         if (program.extTheme) {
             this.configuration.mainData.extTheme = program.extTheme;
         }
@@ -6360,7 +6489,7 @@ var CliApplication = /** @class */ (function (_super) {
             else {
                 logger.error('tsconfig.json file was not found, please use -p flag');
                 outputHelp();
-            }
+            }			
         }
     };
     return CliApplication;
