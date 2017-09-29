@@ -12,6 +12,7 @@ import { ConfigurationInterface } from './interfaces/configuration.interface';
 import { $dependenciesEngine } from './engines/dependencies.engine';
 import { NgdEngine } from './engines/ngd.engine';
 import { SearchEngine } from './engines/search.engine';
+import { ExportEngine } from './engines/export.engine';
 import { Dependencies } from './compiler/dependencies';
 import { RouterParser } from '../utils/router.parser';
 
@@ -38,6 +39,7 @@ let pkg = require('../package.json'),
     $markdownengine = new MarkdownEngine(),
     $ngdengine = new NgdEngine(),
     $searchEngine = new SearchEngine(),
+    $exportEngine = new ExportEngine(),
     startTime = new Date()
 
 export class Application {
@@ -537,6 +539,226 @@ export class Application {
                reject('Error during Additional documentation generation');
            });
         });
+    }
+
+    writeJSON(simplified) {
+        const jsonData = {
+                "directives" : [], 
+                "injectables" : [], 
+                "routes" : [], 
+                "pipes" : [], 
+                "modules" : [], 
+                "classes" : [], 
+                "components" : [], 
+                "interfaces" : [], 
+                "miscellaneous" : { 
+                    "variables" : [],
+                    "functions" : [],
+                    "typealiases" : [],
+                    "enumerations" : []
+                }
+        };
+        if ($dependenciesEngine.modules.length > 0) {
+            logger.info('... modules');
+            const modules = $dependenciesEngine.getModules();
+            /*console.log('Module example');
+            console.log(modules[0]);*/
+            for(var i=0; i < modules.length; i++)
+            {
+                const moduleElement = { "name": modules[i].name, "providers" :[], "declarations" :[], "imports" :[], "exports" : [], "bootstrap" : [], "description" : modules[i].description  };
+
+                for(var p = 0; p < modules[i].providers.length; p++)
+                {
+                    let subElement = modules[i].providers[p].name;
+                    if(!simplified)
+                    {
+                        subElement = { "name": modules[i].providers[p].name };
+                    }
+                    moduleElement.providers.push( subElement );
+                }
+                for(var p=0; p < modules[i].declarations.length; p++)
+                {
+                    let subElement = modules[i].declarations[p].name;
+                    if(!simplified)
+                    {
+                        subElement = { "name": modules[i].declarations[p].name };
+                    }
+                    moduleElement.declarations.push( subElement );
+                }
+                for(var p=0; p < modules[i].imports.length; p++)
+                {
+                    let subElement = modules[i].imports[p].name;
+                    if(!simplified)
+                    {
+                        subElement = { "name": modules[i].imports[p].name };
+                    }
+                    moduleElement.imports.push( subElement );
+                }
+                for(var p=0; p < modules[i].exports.length; p++)
+                {
+                    let subElement = modules[i].exports[p].name;
+                    if(!simplified)
+                    {
+                        subElement = { "name": modules[i].exports[p].name };
+                    }
+                    moduleElement.exports.push( subElement );
+                }
+                for(var p=0; p < modules[i].bootstrap.length; p++)
+                {
+                    let subElement = modules[i].bootstrap[p].name;
+                    if(!simplified)
+                    {
+                        subElement = { "name": modules[i].bootstrap[p].name };
+                    }
+                    moduleElement.bootstrap.push( subElement );
+                }
+                jsonData.modules.push(moduleElement);
+            }
+        }
+
+        logger.info('... directives');
+        if ($dependenciesEngine.directives.length > 0) {            
+            const directives = $dependenciesEngine.getDirectives();
+            /*console.log('Directive example');
+            console.log(directives[0]);*/
+            for(var i=0; i < directives.length; i++)
+            {
+                jsonData.directives.push(directives[i].name);
+            }
+        }
+
+        logger.info('... injectables');
+        if ($dependenciesEngine.injectables.length > 0) {
+            const injectables = $dependenciesEngine.getInjectables();
+            /*console.log('Injectable example');
+            console.log(injectables[0]);*/
+            for(var i=0; i < injectables.length; i++)
+            {
+                jsonData.injectables.push(injectables[i].name);
+            }
+        }
+
+        logger.info('... routes');
+        if ($dependenciesEngine.routes && $dependenciesEngine.routes.children.length > 0) {
+            const routes = $dependenciesEngine.getRoutes();
+            /*console.log('Route example');
+            console.log(routes[0]);*/
+            for(var i=0; i < routes.length; i++)
+            {
+                jsonData.routes.push(routes[i].name);
+            }
+        }
+
+        logger.info('... pipes');
+        if ($dependenciesEngine.pipes.length > 0) {
+            const pipes = $dependenciesEngine.getPipes();
+            /*console.log('Pipe example');
+            console.log(pipes[0]);*/
+            for(var i=0; i < pipes.length; i++)
+            {
+                jsonData.pipes.push(pipes[i].name);
+            }
+        }
+
+        logger.info('... classes');
+        if ($dependenciesEngine.classes.length > 0) {
+            const classes = $dependenciesEngine.getClasses();
+            /*console.log('Classe example');
+            console.log(classes[0]);*/
+            for(var i=0; i < classes.length; i++)
+            {
+                const classElement = { "name": classes[i].name, "properties" :[], "methods" :[], "indexSignatures" :[]  };
+
+                // logger.info('class properties');
+                for(var p=0; p < classes[i].properties.length; p++)
+                {
+                    let subElement = classes[i].properties[p].name;
+                    if(!simplified)
+                    {
+                        subElement = { "name": classes[i].properties[p].name,  "defaultValue": classes[i].properties[p].defaultValue, "type": classes[i].properties[p].type, "description": classes[i].properties[p].description };
+                    }
+                    classElement.properties.push( subElement );
+                }
+                // logger.info('class methods');
+                for(var m=0; m < classes[i].methods.length; m++)
+                {
+                    let subElement = classes[i].methods[m].name;
+                    if(!simplified)
+                    {
+                        subElement = { "name": classes[i].methods[m].name };
+                    }
+                    classElement.methods.push( subElement );
+                }
+                // logger.info('class indexSignatures');
+                for(var s=0; s < classes[i].indexSignatures.length; s++)
+                {
+                    logger.log(classes[i].indexSignatures[s]);
+                    let subElement = classes[i].indexSignatures[s].name;
+                    if(!simplified)
+                    {
+                        subElement = { "name": classes[i].indexSignatures[s].name };
+                    }
+                    classElement.indexSignatures.push( subElement );
+                }
+                jsonData.classes.push( classElement );
+            }
+        }
+
+        logger.info('... components');
+        if ($dependenciesEngine.components.length > 0) {
+            const components = $dependenciesEngine.getComponents();
+            // console.log(components[0]);
+            for(var i=0; i < components.length; i++)
+            {
+                //jsonData.components.push(components[i].name);
+            }
+        }
+
+        logger.info('... interfaces');
+        if ($dependenciesEngine.interfaces.length > 0) {
+            const interfaces = $dependenciesEngine.getInterfaces();
+            // console.log(interfaces[0]);
+            for(var i=0; i < interfaces.length; i++)
+            {
+                jsonData.interfaces.push(interfaces[i].name);
+            }
+        }
+
+        logger.info('... miscellaneous');
+        if ($dependenciesEngine.miscellaneous.variables.length > 0 ||
+            $dependenciesEngine.miscellaneous.functions.length > 0 ||
+            $dependenciesEngine.miscellaneous.typealiases.length > 0 ||
+            $dependenciesEngine.miscellaneous.enumerations.length > 0) {
+            const miscellaneous = $dependenciesEngine.getMiscellaneous();
+
+            /*console.log('Variable example');
+            console.log(miscellaneous.variables[0]);
+            console.log('Function example');
+            console.log(miscellaneous.functions[0]);
+            console.log('Typealias example');
+            console.log(miscellaneous.typealiases[0]);
+            console.log('Enumeration example');
+            console.log(miscellaneous.enumerations[0]);*/
+
+            for(var i=0; i < miscellaneous.variables.length; i++)
+            {
+                //jsonData.miscellaneous.variables.push(miscellaneous.variables[i].name);
+            }
+            for(var i=0; i < miscellaneous.functions.length; i++)
+            {
+                jsonData.miscellaneous.functions.push(miscellaneous.functions[i].name);
+            }
+            for(var i=0; i < miscellaneous.typealiases.length; i++)
+            {
+                jsonData.miscellaneous.typealiases.push(miscellaneous.typealiases[i].name);
+            }
+            for(var i=0; i < miscellaneous.enumerations.length; i++)
+            {
+                jsonData.miscellaneous.enumerations.push(miscellaneous.enumerations[i].name);
+            }
+        }
+        
+        return jsonData;
     }
 
     prepareModules(someModules?) {
@@ -1291,10 +1513,16 @@ export class Application {
             }, (e) =>  {
                 logger.error(e);
             });
+            if (this.configuration.mainData.exporting === 'json-simplified' || this.configuration.mainData.exporting === 'json') {				
+                logger.info('Preparing JSON export...');
+                const jsonData = this.writeJSON(this.configuration.mainData.exporting === 'json-simplified');
+                $exportEngine.exportStructure(this.configuration.mainData.output, jsonData).then(() => {});
+            }
         })
         .catch((e) => {
             logger.error(e);
         });
+
     }
 
     processAdditionalPages() {

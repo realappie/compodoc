@@ -15,6 +15,7 @@ export class Configuration implements ConfigurationInterface {
     private _mainData: MainDataInterface = {
         output: COMPODOC_DEFAULTS.folder,
         theme: COMPODOC_DEFAULTS.theme,
+        exporting: 'none',
         extTheme: '',
         serve: false,
         port: COMPODOC_DEFAULTS.port,
